@@ -1,19 +1,18 @@
+# Use Red Hat UBI 9 Node.js 18 base image
 FROM registry.access.redhat.com/ubi9/nodejs-18:latest
 
-# Set working directory under /opt/app-root/src (already writable)
+# Use the OpenShift recommended working directory (writable by default non-root user)
 WORKDIR /opt/app-root/src
 
-# Copy source files
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install --omit=dev
 
-# Copy rest of the app
+# Copy all source code
 COPY . .
 
-# Expose port (optional)
+# Expose port 8080 (default for OpenShift Node.js)
 EXPOSE 8080
 
-# Start command
+# Start the application
 CMD ["npm", "start"]
