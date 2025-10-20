@@ -11,7 +11,7 @@ const {
   S3_REGION = "us-east-1",
   S3_ACCESS_KEY_ID,
   S3_SECRET_ACCESS_KEY,
-  S3_BUCKET_NAME
+  S3_BUCKET_NAME_NAME
 } = process.env;
 
 // Disable TLS verification for self-signed certs (for testing inside OCP pod)
@@ -27,7 +27,7 @@ const s3 = new S3Client({
 // Existing route: list objects
 app.get("/api/objects", async (req, res) => {
   try {
-    const data = await s3.send(new ListObjectsV2Command({ Bucket: S3_BUCKET }));
+    const data = await s3.send(new ListObjectsV2Command({ Bucket: S3_BUCKET_NAME }));
     res.json(data.Contents || []);
   } catch (err) {
     console.error(err);
@@ -38,7 +38,7 @@ app.get("/api/objects", async (req, res) => {
 // New route: /list (alias for convenience)
 app.get("/list", async (req, res) => {
   try {
-    const data = await s3.send(new ListObjectsV2Command({ Bucket: S3_BUCKET }));
+    const data = await s3.send(new ListObjectsV2Command({ Bucket: S3_BUCKET_NAME }));
     res.json(data.Contents || []);
   } catch (err) {
     console.error(err);
@@ -51,7 +51,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
     await s3.send(new PutObjectCommand({
-      Bucket: S3_BUCKET,
+      Bucket: S3_BUCKET_NAME,
       Key: file.originalname,
       Body: file.buffer,
       ContentType: file.mimetype
@@ -66,7 +66,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 // Generate signed download URL
 app.get("/api/download/:key", async (req, res) => {
   try {
-    const cmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: req.params.key });
+    const cmd = new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: req.params.key });
     const url = await getSignedUrl(s3, cmd, { expiresIn: 300 });
     res.json({ url });
   } catch (err) {
