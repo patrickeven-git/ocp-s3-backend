@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OCP S3 App</title>
+</head>
+<body>
+  <h1>OCP S3 App</h1>
+
+  <h2>Upload</h2>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>Files</h2>
+  <ul id="fileList"></ul>
+
+  <script>
+    async function loadFiles() {
+      const res = await fetch('/api/objects');
+      const files = await res.json();
+      const ul = document.getElementById('fileList');
+      ul.innerHTML = '';
+      files.forEach(f => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `/api/download/${f.Key}`;
+        a.innerText = f.Key;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }
+
+    document.getElementById('uploadForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      const form = new FormData();
+      form.append('file', file);
+      await fetch('/api/upload', { method: 'POST', body: form });
+      loadFiles();
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>
