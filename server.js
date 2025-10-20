@@ -1,32 +1,52 @@
 import express from "express";
 import multer from "multer";
-import { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  GetObjectCommand
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const app = express();
 const upload = multer();
 
-const S3_ENDPOINT = process.env.S3_ENDPOINT;
-const S3_REGION = process.env.S3_REGION || "us-east-1";
-const S3_ACCESS_KEY_ID = process.env.S3_ACCESS_KEY_ID;
-const S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY;
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;  // <- assign individually
+// ------------------------
+// Environment variables
+// ------------------------
+const {
+  S3_ENDPOINT,
+  S3_REGION = "us-east-1",
+  S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY,
+  S3_BUCKET_NAME,
+  PORT = 3000
+} = process.env;
 
-// Make sure TLS errors are ignored for self-signed certs (inside OCP)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+if (!S3_BUCKET_NAME) {
+  console.error("Error: S3_BUCKET_NAME is not defined!");
+  process.exit(1);
+}
 
+// ------------------------
+// S3 Client
+// ------------------------
 const s3 = new S3Client({
   endpoint: S3_ENDPOINT,
   region: S3_REGION,
-  credentials: { accessKeyId: S3_ACCESS_KEY_ID, secretAccessKey: S3_SECRET_ACCESS_KEY },
+  credentials: {
+    accessKeyId: S3_ACCESS_KEY_ID,
+    secretAccessKey: S3_SECRET_ACCESS_KEY
+  },
   forcePathStyle: true
 });
 
-// List objects route
-app.get("/list", async (req, res) => {
-  if (!S3_BUCKET_NAME) {
-    return res.status(500).json({ error: "S3_BUCKET_NAME is not defined" });
-  }
+// ------------------------
+// API Endpoints
+// ------------------------
+
+// List objects in bucket
+app.get("/api/objects", async (req, res) => {
   try {
     const data = await s3.send(new ListObjectsV2Command({ Bucket: S3_BUCKET_NAME }));
     res.json(data.Contents || []);
@@ -36,10 +56,10 @@ app.get("/list", async (req, res) => {
   }
 });
 
-// Upload route
+// Upload file
 app.post("/api/upload", upload.single("file"), async (req, res) => {
-  const file = req.file;
   try {
+    const file = req.file;
     await s3.send(new PutObjectCommand({
       Bucket: S3_BUCKET_NAME,
       Key: file.originalname,
@@ -53,7 +73,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// Download route
+// Download file (signed URL)
 app.get("/api/download/:key", async (req, res) => {
   try {
     const cmd = new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: req.params.key });
@@ -65,4 +85,14 @@ app.get("/api/download/:key", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server listening on port 3000"));
+// ------------------------
+// Simple HTML GUI
+// ------------------------
+app.use(express.static("public"));
+
+// ------------------------
+// Start server
+// ------------------------
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
