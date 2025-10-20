@@ -11,7 +11,7 @@ const {
   S3_REGION = "us-east-1",
   S3_ACCESS_KEY_ID,
   S3_SECRET_ACCESS_KEY,
-  S3_BUCKET
+  S3_BUCKET_NAME
 } = process.env;
 
 // Disable TLS verification for self-signed certs (for testing inside OCP pod)
