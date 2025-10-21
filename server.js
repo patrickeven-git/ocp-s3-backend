@@ -62,4 +62,4 @@ app.get("/api/download/:key", async (req, res) => {
 });
 
 // 🔑 Listen on all interfaces so OpenShift router can reach it
-app.listen(3000, '0.0.0.0', () => console.log("listening on 3000"));
+app.listen(8080, '0.0.0.0', () => console.log("listening on 8080"));
